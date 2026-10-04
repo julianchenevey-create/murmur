@@ -28,7 +28,7 @@ enum TranscriberFactory {
                                   key: nil, model: "", language: t.language, prompt: t.vocabulary)
             }
             guard let binary = WhisperCLI.locate(t.whisperCliPath) else {
-                throw MurmurError("whisper-cli not found — run: brew install whisper-cpp")
+                throw MurmurError("whisper-cli not found — reinstall Murmur or run: brew install whisper-cpp")
             }
             let model = Paths.expand(t.modelPath)
             guard FileManager.default.fileExists(atPath: model) else {
@@ -55,6 +55,11 @@ struct WhisperCLI: Transcriber {
             "/opt/homebrew/bin/whisper-cli", "/usr/local/bin/whisper-cli",
             "/opt/homebrew/bin/whisper-cpp", "/usr/local/bin/whisper-cpp",
         ]
+        // Release builds ship whisper-cli inside Murmur.app, next to the main executable.
+        if let bundled = Bundle.main.executableURL?.deletingLastPathComponent()
+            .appendingPathComponent("whisper-cli").path {
+            candidates.insert(bundled, at: 0)
+        }
         if !configured.isEmpty { candidates.insert(Paths.expand(configured), at: 0) }
         return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
             .map { URL(fileURLWithPath: $0) }

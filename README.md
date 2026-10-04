@@ -22,32 +22,21 @@ Requires macOS 13 (Ventura) or later.
 
 ## 1. Install
 
-### Option A: download a prebuilt app (no Xcode needed)
-
-Every push to `main` builds a universal (Apple Silicon + Intel) app on GitHub Actions.
-Open the repo's **Actions** tab, select the latest green run, and download the **Murmur**
-artifact. Unzip it twice: GitHub wraps `Murmur.zip` in another zip. Move `Murmur.app` to
-`/Applications`.
-
-The app isn't notarized by Apple, so macOS blocks it the first time. Clear the download
-flag once in Terminal:
+### Option A: one line in Terminal (recommended)
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Murmur.app
+curl -fsSL https://raw.githubusercontent.com/julianchenevey-create/murmur/main/scripts/install.sh | bash
 ```
 
-Then open it and install the transcription engine and a model:
+This downloads the latest `Murmur.app` (whisper.cpp is built in, so you don't need Homebrew),
+downloads the `small.en` speech model, sets the 🌐 key to "Do Nothing", and opens the app.
+Then click **Allow** for the microphone and turn Murmur on under **Accessibility**.
+Run the same line again to update. For the larger model, use `... | MURMUR_MODEL=medium.en bash`.
 
-```bash
-brew install whisper-cpp
-mkdir -p ~/.config/murmur/models
-curl -L -o ~/.config/murmur/models/ggml-small.en.bin   https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin
-```
+Each update is a new ad-hoc signed build, so macOS may forget the Accessibility grant after
+updating. If the hotkey stops working, see "Permissions reset after a rebuild" below.
 
-Each new download gets a new ad-hoc signature, so re-grant Accessibility after updating
-(see "Permissions reset after a rebuild" below).
-
-### Option B: build it yourself
+### Option B: build it yourself (needs Xcode Command Line Tools)
 
 ```bash
 # Xcode Command Line Tools (for `swift`), if you don't have them yet

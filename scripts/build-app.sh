@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds build/Murmur.app. Pass --install to copy it to /Applications.
 # Set UNIVERSAL=1 for an arm64 + x86_64 binary.
+# Set WHISPER_CLI=/path/to/whisper-cli to bundle it, so the app doesn't need Homebrew.
 #
 # Signing: by default the app is ad-hoc signed, which means macOS treats every rebuild as a
 # new app and you must re-grant Accessibility. To avoid that, create a self-signed
@@ -23,6 +24,12 @@ cp "$BIN" "$APP/Contents/MacOS/Murmur"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 IDENTITY="${CODESIGN_IDENTITY:--}"
+if [[ -n "${WHISPER_CLI:-}" ]]; then
+    cp "$WHISPER_CLI" "$APP/Contents/MacOS/whisper-cli"
+    chmod +x "$APP/Contents/MacOS/whisper-cli"
+    # Nested code must be signed before the bundle that contains it.
+    codesign --force --sign "$IDENTITY" "$APP/Contents/MacOS/whisper-cli"
+fi
 codesign --force --sign "$IDENTITY" "$APP"
 echo "Built $APP (signed with: $IDENTITY)"
 

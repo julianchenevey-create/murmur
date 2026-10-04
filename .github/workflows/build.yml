@@ -5,16 +5,41 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write # publish releases
+
+env:
+  WHISPER_CPP_VERSION: v1.9.4
+
 jobs:
   build:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
+      # Build a self-contained, universal whisper-cli (static libs, Metal shaders embedded)
+      # so the app works without Homebrew.
+      - name: Build whisper-cli
+        run: |
+          git clone --depth 1 --branch "$WHISPER_CPP_VERSION" https://github.com/ggml-org/whisper.cpp
+          cmake -S whisper.cpp -B whisper-build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DGGML_NATIVE=OFF \
+            -DGGML_METAL=ON \
+            -DGGML_METAL_EMBED_LIBRARY=ON \
+            -DWHISPER_BUILD_TESTS=OFF
+          cmake --build whisper-build --config Release -j 4 --target whisper-cli
+          lipo -info whisper-build/bin/whisper-cli
+          otool -L whisper-build/bin/whisper-cli
+
       - name: Build universal app
         run: |
           chmod +x scripts/*.sh
-          UNIVERSAL=1 scripts/build-app.sh
+          UNIVERSAL=1 WHISPER_CLI=whisper-build/bin/whisper-cli scripts/build-app.sh
+          codesign --verify --deep --strict build/Murmur.app
 
       # Zip with ditto so the executable bit and bundle structure survive the download.
       - name: Zip
@@ -25,3 +50,14 @@ jobs:
           name: Murmur
           path: build/Murmur.zip
           if-no-files-found: error
+
+      # scripts/install.sh downloads releases/latest/download/Murmur.zip.
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" build/Murmur.zip \
+            --title "Murmur build ${{ github.run_number }}" \
+            --notes "Install or update on your Mac with: curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash" \
+            --latest
