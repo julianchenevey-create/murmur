@@ -22,6 +22,33 @@ Requires macOS 13 (Ventura) or later.
 
 ## 1. Install
 
+### Option A: download a prebuilt app (no Xcode needed)
+
+Every push to `main` builds a universal (Apple Silicon + Intel) app on GitHub Actions.
+Open the repo's **Actions** tab, select the latest green run, and download the **Murmur**
+artifact. Unzip it twice: GitHub wraps `Murmur.zip` in another zip. Move `Murmur.app` to
+`/Applications`.
+
+The app isn't notarized by Apple, so macOS blocks it the first time. Clear the download
+flag once in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Murmur.app
+```
+
+Then open it and install the transcription engine and a model:
+
+```bash
+brew install whisper-cpp
+mkdir -p ~/.config/murmur/models
+curl -L -o ~/.config/murmur/models/ggml-small.en.bin   https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin
+```
+
+Each new download gets a new ad-hoc signature, so re-grant Accessibility after updating
+(see "Permissions reset after a rebuild" below).
+
+### Option B: build it yourself
+
 ```bash
 # Xcode Command Line Tools (for `swift`), if you don't have them yet
 xcode-select --install
