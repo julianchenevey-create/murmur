@@ -15,8 +15,10 @@ MODEL_FILE="$CONFIG_DIR/models/ggml-$MODEL.bin"
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 
 [[ "$(uname)" == "Darwin" ]] || { echo "This installer is for macOS."; exit 1; }
-major="$(sw_vers -productVersion | cut -d. -f1)"
-(( major >= 13 )) || { echo "Murmur needs macOS 13 (Ventura) or newer."; exit 1; }
+IFS=. read -r major minor _ <<< "$(sw_vers -productVersion)"
+if (( major < 13 || (major == 13 && ${minor:-0} < 3) )); then
+    echo "Murmur needs macOS 13.3 (Ventura) or newer."; exit 1
+fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

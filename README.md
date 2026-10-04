@@ -16,7 +16,7 @@ talk, let go, and the cleaned-up text lands at your cursor in whatever app you'r
 - **Menu bar.** On/off toggle, launch at login, and quick access to the settings file.
 - **No accounts, no telemetry.** Nothing leaves your Mac unless you put an API key in `.env`.
 
-Requires macOS 13 (Ventura) or later.
+Requires macOS 13.3 (Ventura) or later.
 
 ---
 
